@@ -64,6 +64,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "bootcore.h"
 #include "ide.h"
 #include "profiling.h"
+#include "loadscreen.h"
 
 /*menu states*/
 enum MENU
@@ -214,6 +215,7 @@ static int32_t  bt_timer = 0;
 static bool osd_unlocked = 1;
 static char osd_code_entry[32];
 static uint32_t osd_lock_timer = 0;
+int loader_bg = 1;
 
 
 extern const char *version;
@@ -1017,6 +1019,26 @@ void HandleUI(void)
 		case 0:
 			if (CheckTimer(mgl->timer))
 			{
+				if (mgl->item[mgl->current].action == MGL_ACTION_FADE_IN)
+				{
+					if (mgl->item[mgl->current].mute)
+						set_volume(0x81, 1);
+					else
+						set_volume(0x80, 1);
+
+					fade_in_screen(mgl->item[mgl->current].path);
+					mgl->state = 3;
+				}
+				else if (mgl->item[mgl->current].action == MGL_ACTION_FADE_OUT)
+				{					
+					fade_out_screen();
+					if (mgl->item[mgl->current].mute)
+						set_volume(0x81, 1);
+					else
+						set_volume(0x80, 1);
+					mgl->state = 3;
+				}
+				else
 				mgl->state = (mgl->item[mgl->current].action == MGL_ACTION_LOAD) ? 1 : 4;
 			}
 			break;
@@ -2413,6 +2435,7 @@ void HandleUI(void)
 
 			if (selPath[0])
 			{
+				if (loader_bg != -1 && !mgl->done) fade_in_screen(selPath);
 
 				char idx = user_io_ext_idx(selPath, fs_pFileExt) << 6 | ioctl_index;
 				if (addon[0] == 'f' && addon[1] != '1') process_addon(addon, idx);
@@ -2444,6 +2467,14 @@ void HandleUI(void)
 				}
 
 				if (addon[0] == 'f' && addon[1] == '1') process_addon(addon, idx);
+
+				if (loader_bg != -1 && !mgl->done)
+				{
+					if (!loader_bg)
+						fade_out_screen();
+					else					
+						video_fb_enable(0);
+				}		
 			}
 
 			mgl->state = 3;
@@ -7338,6 +7369,6 @@ void ProgressMessage(const char* title, const char* text, int current, int max)
 		for (int i = 0; i <= new_progress; i++) buf[i] = (i < new_progress) ? 0x7F : c;
 		buf[PROGRESS_CNT] = 0;
 
-		InfoMessage(progress_buf, 2000, title);
+		if (loader_bg) InfoMessage(progress_buf, 2000, title);
 	}
 }

@@ -36,6 +36,7 @@
 #include "ide.h"
 #include "ide_cdrom.h"
 #include "profiling.h"
+#include "loadscreen.h"
 
 #include "support.h"
 
@@ -141,6 +142,8 @@ static char core_name[32] = {};
 static char ovr_name[32] = {};
 static char orig_name[32] = {};
 static int  ovr_samedir = 0;
+int ovr_cfgcore_subfolder = 0;
+char ovr_logo_loading[32] = {0};
 
 char *user_io_make_filepath(const char *path, const char *filename)
 {
@@ -149,10 +152,12 @@ char *user_io_make_filepath(const char *path, const char *filename)
 	return filepath_store;
 }
 
-void user_io_name_override(const char* name, int samedir)
+void user_io_name_override(const char* name, int samedir, int cfgcore_subfolder, const char* logo_loading)
 {
 	snprintf(ovr_name, sizeof(ovr_name), "%s", name);
 	ovr_samedir = samedir;
+	ovr_cfgcore_subfolder = cfgcore_subfolder;
+	if (logo_loading) snprintf(ovr_logo_loading, sizeof(ovr_logo_loading), "%s", logo_loading);
 }
 
 void user_io_set_core_name(const char *name)
@@ -390,6 +395,7 @@ void user_io_read_core_name()
 	else if (orig_name[0]) strcpy(core_name, p);
 
 	printf("Core name is \"%s\"\n", core_name);
+	printf("Orig name is \"%s\"\n", orig_name);
 }
 
 int substrcpy(char *d, const char *s, char idx)
@@ -1310,13 +1316,14 @@ void user_io_init(const char *path, const char *xml)
 {
 	char *name;
 	static char mainpath[512];
+	static char full_config_dir[128];
 	core_name[0] = 0;
 	disable_osd = 0;
 
 	// we need to set the directory to where the XML file (MRA) is
 	// not the RBF. The RBF will be in arcade, which the user shouldn't
 	// browse
-	strcpy(core_path, xml ? xml : path);
+	strcpy(core_path, xml ? xml : path);	
 	strcpy(rbf_path, path);
 
 	memset(sd_image, 0, sizeof(sd_image));
@@ -1364,6 +1371,9 @@ void user_io_init(const char *path, const char *xml)
 	user_io_read_confstr();
 	user_io_read_core_name();
 
+	if (ovr_cfgcore_subfolder) sprintf(config_dir, "%s/%s", CONFIG_DIR, user_io_get_core_name(1));
+	if (ovr_cfgcore_subfolder) sprintf(covers_dir, "%s/%s", COVERS_DIR, user_io_get_core_name(1));
+
 	if ((fpga_get_buttons() & BUTTON_OSD) && is_menu())
 	{
 		altcfg(0);
@@ -1372,6 +1382,30 @@ void user_io_init(const char *path, const char *xml)
 
 	cfg_parse();
 	cfg_print();
+
+	if (!ovr_cfgcore_subfolder)
+	{		
+		sprintf(covers_dir, "%s/%s", COVERS_DIR, (xml && strstr(xml, ".mra")) ? cfg.cfgarcade_subfolder[0] ? cfg.cfgarcade_subfolder : "Arcade" : user_io_get_core_name());		
+		if (cfg.cfgcore_subfolder[0])
+		{			
+			sprintf(config_dir, "%s/%s", CONFIG_DIR, (cfg.cfgarcade_subfolder[0] && xml && strstr(xml, ".mra")) ? cfg.cfgarcade_subfolder : cfg.cfgcore_subfolder);					
+		}
+		else
+		{
+			if (cfg.cfgarcade_subfolder[0] && xml && strstr(xml, ".mra"))
+			{
+				sprintf(config_dir, "%s/%s", CONFIG_DIR, cfg.cfgarcade_subfolder);
+			}
+			else
+			{
+				sprintf(config_dir, "%s", CONFIG_DIR);
+			}			
+		}
+	}
+
+	sprintf(full_config_dir, "%s/%s", getRootDir(), config_dir);
+	FileCreatePath(full_config_dir);
+
 	while (cfg.waitmount[0] && !is_menu())
 	{
 		printf("> > > wait for %s mount < < <\n", cfg.waitmount);
@@ -1470,7 +1504,17 @@ void user_io_init(const char *path, const char *xml)
 			{
 				if (xml && isXmlName(xml) == 1)
 				{
-					arcade_send_rom(xml);
+					load_screen_bg();
+					if (loader_bg != -1)
+					{
+						fade_in_screen(xml);
+						arcade_send_rom(xml);
+						if (!loader_bg)
+							fade_out_screen();
+						else
+							video_fb_enable(0);
+					}
+					else arcade_send_rom(xml);
 				}
 				else if (is_minimig())
 				{

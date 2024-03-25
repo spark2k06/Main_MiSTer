@@ -29,6 +29,8 @@ struct sw_struct
 
 #define MGL_ACTION_LOAD  0
 #define MGL_ACTION_RESET 1
+#define MGL_ACTION_FADE_IN 2
+#define MGL_ACTION_FADE_OUT 3
 
 struct mgl_item_struct
 {
@@ -43,6 +45,7 @@ struct mgl_item_struct
 	int  valid;
 	int  submenu;
 	int  action;
+	int  mute;
 };
 
 struct mgl_struct

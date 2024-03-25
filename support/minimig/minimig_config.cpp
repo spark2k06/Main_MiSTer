@@ -276,11 +276,11 @@ static char UploadActionReplay()
 static char* GetConfigurationName(int num, int chk)
 {
 	static char name[128];
-	if (num) sprintf(name, CONFIG_DIR "/%s%d.cfg", user_io_get_core_name(), num);
-	else sprintf(name, CONFIG_DIR "/%s.cfg", user_io_get_core_name());
+	if (num) sprintf(name, "%s/%s%d.cfg", config_dir, user_io_get_core_name(), num);
+	else sprintf(name, "%s/%s.cfg", config_dir, user_io_get_core_name());
 
 	if (chk && !S_ISREG(getFileType(name))) return 0;
-	return name+strlen(CONFIG_DIR)+1;
+	return name+strlen(config_dir)+1;
 }
 
 int minimig_cfg_save(int num)
