@@ -36,6 +36,7 @@
 #include "ide.h"
 #include "ide_cdrom.h"
 #include "profiling.h"
+#include "loadscreen.h"
 
 #include "support.h"
 
@@ -1456,7 +1457,17 @@ void user_io_init(const char *path, const char *xml)
 			{
 				if (xml && isXmlName(xml) == 1)
 				{
-					arcade_send_rom(xml);
+					load_screen_bg();
+					if (loader_bg != -1)
+					{
+						fade_in_screen(xml);
+						arcade_send_rom(xml);
+						if (!loader_bg)
+							fade_out_screen();
+						else
+							video_fb_enable(0);
+					}
+					else arcade_send_rom(xml);
 				}
 				else if (is_minimig())
 				{

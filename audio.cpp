@@ -145,7 +145,7 @@ int get_core_volume()
 	return corevol_att;
 }
 
-void set_volume(int cmd)
+void set_volume(int cmd, char noinfo)
 {
 	vol_set_timeout = GetTimer(1000);
 
@@ -159,7 +159,7 @@ void set_volume(int cmd)
 
 	send_volume();
 
-	if (vol_att & 0x10)
+	if ((vol_att & 0x10) && !noinfo)
 	{
 		Info("\x8d Mute", 1000);
 	}
@@ -174,7 +174,7 @@ void set_volume(int cmd)
 		int vol = (audio_filter_en() < 0) ? get_core_volume() : 0;
 		memset(bar, 0x8C, 8 - vol);
 		memset(bar, 0x7f, 8 - vol - vol_att);
-		Info(str, 1000);
+		if (!noinfo) Info(str, 1000);
 	}
 }
 

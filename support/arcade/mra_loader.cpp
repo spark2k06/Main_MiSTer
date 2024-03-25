@@ -1317,6 +1317,58 @@ static int scan_mgl(XMLEvent evt, const XMLNode* node, SXML_CHAR* text, const in
 				printf("  action=reset\n  delay=%d\n  hold=%d\n\n", mgl.item[mgl.count].delay, mgl.item[mgl.count].hold);
 				if (mgl.item[mgl.count].valid) mgl.count++;
 			}
+			else if (!strcasecmp(node->tag, "fade_in"))
+			{
+				mgl.item[mgl.count].action = MGL_ACTION_FADE_IN;
+
+				for (int i = 0; i < node->n_attributes; i++)
+				{
+					if (!strcasecmp(node->attributes[i].name, "delay"))
+					{
+						mgl.item[mgl.count].delay = strtoul(node->attributes[i].value, NULL, 0);
+						mgl.item[mgl.count].valid = 1;
+					}
+					else if (!strcasecmp(node->attributes[i].name, "path"))
+					{
+						snprintf(mgl.item[mgl.count].path, sizeof(mgl.item[mgl.count].path), "%s", node->attributes[i].value);
+					}
+					else if (!strcasecmp(node->attributes[i].name, "mute"))
+					{
+						mgl.item[mgl.count].mute = strtoul(node->attributes[i].value, NULL, 0);
+					}
+					else if (!strcasecmp(node->attributes[i].name, "hold"))
+					{
+						mgl.item[mgl.count].hold = strtoul(node->attributes[i].value, NULL, 0);
+					}
+				}
+
+				printf("  action=fade_in\n  delay=%d\n  hold=%d\n\n", mgl.item[mgl.count].delay, mgl.item[mgl.count].hold);
+				if (mgl.item[mgl.count].valid) mgl.count++;
+			}
+			else if (!strcasecmp(node->tag, "fade_out"))
+			{
+				mgl.item[mgl.count].action = MGL_ACTION_FADE_OUT;
+
+				for (int i = 0; i < node->n_attributes; i++)
+				{
+					if (!strcasecmp(node->attributes[i].name, "delay"))
+					{
+						mgl.item[mgl.count].delay = strtoul(node->attributes[i].value, NULL, 0);
+						mgl.item[mgl.count].valid = 1;
+					}
+					else if (!strcasecmp(node->attributes[i].name, "mute"))
+					{
+						mgl.item[mgl.count].mute = strtoul(node->attributes[i].value, NULL, 0);
+					}
+					else if (!strcasecmp(node->attributes[i].name, "hold"))
+					{
+						mgl.item[mgl.count].hold = strtoul(node->attributes[i].value, NULL, 0);
+					}
+				}
+
+				printf("  action=fade_out\n  delay=%d\n  hold=%d\n\n", mgl.item[mgl.count].delay, mgl.item[mgl.count].hold);
+				if (mgl.item[mgl.count].valid) mgl.count++;
+			}
 		}
 		break;
 

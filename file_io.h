@@ -147,6 +147,7 @@ const char* FileReadLine(fileTextReader *reader);
 #define GAMES_DIR "games"
 #define CIFS_DIR "cifs"
 #define DOCS_DIR "docs"
+#define COVERS_DIR "covers"
 
 void create_path(const char *base_dir, const char* sub_dir);
 
