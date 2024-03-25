@@ -339,6 +339,9 @@
     <ClInclude Include="bootcore.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="loadscreen.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="cheats.h">
       <Filter>Header Files</Filter>
     </ClInclude>
