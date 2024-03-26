@@ -1036,6 +1036,11 @@ void HandleUI(void)
 					fade_in_screen(mgl->item[mgl->current].path, CoreName);
 					mgl->state = 3;
 				}
+				else if (mgl->item[mgl->current].action == MGL_ACTION_X86_LAUNCHER)
+				{
+					x86_set_appid(mgl->item[mgl->current].x86_appid);
+					mgl->state = 3;
+				}
 				else if (mgl->item[mgl->current].action == MGL_ACTION_FADE_OUT)
 				{					
 					fade_out_screen();
