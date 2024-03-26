@@ -416,7 +416,7 @@ void SelectFile(const char* path, const char* pFileExt, int Options, unsigned ch
 
 		if (Options & SCANO_SAVES)
 		{
-			snprintf(tmp, sizeof(tmp), "%s/%s", SAVE_DIR, CoreName);
+			snprintf(tmp, sizeof(tmp), "%s/%s", SAVE_DIR, CoreName2);
 			home = tmp;
 		}
 
@@ -2395,6 +2395,7 @@ void HandleUI(void)
 
 									if (is_pce() && !bit) pcecd_reset();
 									if (is_saturn() && !bit) saturn_reset();
+									if (is_n64() && !bit) n64_reset();
 
 									user_io_status_set(opt, 1, ex);
 									user_io_status_set(opt, 0, ex);
@@ -2465,10 +2466,6 @@ void HandleUI(void)
 					neocd_set_en(0);
 					neogeo_romset_tx(selPath, 0);
 				}
-				else if (is_n64())
-				{
-					if (!n64_rom_tx(selPath, idx, load_addr)) Info("failed to load ROM");
-				}
 				else
 				{
 					if (is_pce())
@@ -2477,8 +2474,17 @@ void HandleUI(void)
 						pcecd_reset();
 					}
 					if (!store_name) user_io_store_filename(selPath);
-					user_io_file_tx(selPath, idx, opensave, 0, 0, load_addr);
-					if (user_io_use_cheats() && !store_name) cheats_init(selPath, user_io_get_file_crc());
+					if (is_n64())
+					{
+						uint32_t n64_crc;
+						if (!n64_rom_tx(selPath, idx, load_addr, n64_crc)) Info("failed to load ROM");
+						else if (user_io_use_cheats() && !store_name) cheats_init(selPath, n64_crc);
+					}
+					else
+					{
+						user_io_file_tx(selPath, idx, opensave, 0, 0, load_addr);
+						if (user_io_use_cheats() && !store_name) cheats_init(selPath, user_io_get_file_crc());
+					}
 				}
 
 				if (addon[0] == 'f' && addon[1] == '1') process_addon(addon, idx);
@@ -5886,7 +5892,7 @@ void HandleUI(void)
 		OsdWrite(m++, "", 0, 0);
 		strcpy(s, " ROM    : ");
 		{
-			char *path = user_io_get_core_path();
+			char *path = HomeDir();
 			int len = strlen(path);
 			char *name = minimig_config.kickstart;
 			if (!strncasecmp(name, path, len))  name += len + 1;
@@ -6086,7 +6092,7 @@ void HandleUI(void)
 				if (minimig_config.hardfile[i].filename[0])
 				{
 					strcpy(s, "                                ");
-					char *path = user_io_get_core_path();
+					char *path = HomeDir();
 					int len = strlen(path);
 					char *name = minimig_config.hardfile[i].filename;
 					if (!strncasecmp(name, path, len))  name += len + 1;

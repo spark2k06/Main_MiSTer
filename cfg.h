@@ -72,7 +72,7 @@ typedef struct {
 	char shmask_default[1023];
 	char preset_default[1023];
 	char player_controller[6][8][256];
-	char controller_deadzone[8][256];
+	char controller_deadzone[32][256];
 	uint8_t rumble;
 	uint8_t wheel_force;
 	uint16_t wheel_range;
@@ -97,6 +97,8 @@ typedef struct {
 	uint32_t controller_unique_mapping[256];
 	char osd_lock[25];
 	uint16_t osd_lock_time;
+	char debug;
+	char main[1024];
 	char loading_txt_up;
 	char waiting_txt_up;
 } cfg_t;

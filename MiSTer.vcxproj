@@ -141,6 +141,7 @@
     <ClInclude Include="ide_cdrom.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="joymapping.h" />
+    <ClInclude Include="mat4x4.h" />
     <ClInclude Include="lib\imlib2\Imlib2.h" />
     <ClInclude Include="lib\libco\libco.h" />
     <ClInclude Include="lib\libco\settings.h" />
@@ -177,6 +178,7 @@
     <ClInclude Include="support\minimig\minimig_hdd.h" />
     <ClInclude Include="support\minimig\minimig_share.h" />
     <ClInclude Include="support\n64\n64.h" />
+    <ClInclude Include="support\n64\n64_cpak_header.h" />
     <ClInclude Include="support\n64\n64_joy_emu.h" />
     <ClInclude Include="support\neogeo\neogeocd.h" />
     <ClInclude Include="support\neogeo\neogeo_loader.h" />
