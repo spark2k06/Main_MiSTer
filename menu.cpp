@@ -64,6 +64,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "bootcore.h"
 #include "ide.h"
 #include "profiling.h"
+#include "tapto.h"
+#include "loadscreen.h"
 
 /*menu states*/
 enum MENU
@@ -214,6 +216,7 @@ static int32_t  bt_timer = 0;
 static bool osd_unlocked = 1;
 static char osd_code_entry[32];
 static uint32_t osd_lock_timer = 0;
+int loader_bg = 1;
 
 
 extern const char *version;
@@ -658,6 +661,12 @@ static void printSysInfo()
 		OsdWrite(n++, info_top, 0, 0);
 
 		int j = 0;
+		if (tapto)
+		{
+			sprintf(str, "\x05 %s", tapto);
+			infowrite(n++, str);
+			j++;
+		}
 		char *net;
 		net = getNet(1);
 		if (net)
@@ -1017,6 +1026,31 @@ void HandleUI(void)
 		case 0:
 			if (CheckTimer(mgl->timer))
 			{
+				if (mgl->item[mgl->current].action == MGL_ACTION_FADE_IN)
+				{
+					if (mgl->item[mgl->current].mute)
+						set_volume(0x81, 1);
+					else
+						set_volume(0x80, 1);
+
+					fade_in_screen(mgl->item[mgl->current].path, CoreName);
+					mgl->state = 3;
+				}
+				else if (mgl->item[mgl->current].action == MGL_ACTION_X86_LAUNCHER)
+				{
+					x86_set_appid(mgl->item[mgl->current].x86_appid);
+					mgl->state = 3;
+				}
+				else if (mgl->item[mgl->current].action == MGL_ACTION_FADE_OUT)
+				{					
+					fade_out_screen();
+					if (mgl->item[mgl->current].mute)
+						set_volume(0x81, 1);
+					else
+						set_volume(0x80, 1);
+					mgl->state = 3;
+				}
+				else
 				mgl->state = (mgl->item[mgl->current].action == MGL_ACTION_LOAD) ? 1 : 4;
 			}
 			break;
@@ -1073,6 +1107,7 @@ void HandleUI(void)
 		static int menu_visible = 1;
 		static unsigned long timeout = 0;
 		static unsigned long off_timeout = 0;
+		static unsigned long tapto_xchg = 0;
 		if (!video_fb_state() && cfg.fb_terminal)
 		{
 			if (timeout && CheckTimer(timeout))
@@ -1082,19 +1117,28 @@ void HandleUI(void)
 				{
 					menu_visible = 0;
 					video_menu_bg(user_io_status_get("[3:1]"), 1);
+					tapto_xchg = GetTimer(100);
 					OsdMenuCtl(0);
 				}
 				else if (!menu_visible)
 				{
 					menu_visible--;
 					video_menu_bg(user_io_status_get("[3:1]"), 2);
+					
 					off_timeout = cfg.video_off ? GetTimer(cfg.video_off * 1000) : 0;
-				}
+				}				
+			}
+
+			if (tapto_xchg && CheckTimer(tapto_xchg) && menu_visible <= 0)
+			{
+				video_menu_bg(user_io_status_get("[3:1]"), (menu_visible == 0) ? 1 : 2);
+				tapto_xchg = GetTimer(100);
 			}
 
 			if (off_timeout && CheckTimer(off_timeout) && menu_visible < 0)
 			{
 				off_timeout = 0;
+				tapto_xchg = 0;
 				video_menu_bg(user_io_status_get("[3:1]"), 3);
 			}
 
@@ -2412,6 +2456,7 @@ void HandleUI(void)
 
 			if (selPath[0])
 			{
+				if (loader_bg != -1) fade_in_screen(selPath, CoreName);
 
 				char idx = user_io_ext_idx(selPath, fs_pFileExt) << 6 | ioctl_index;
 				if (addon[0] == 'f' && addon[1] != '1') process_addon(addon, idx);
@@ -2443,6 +2488,14 @@ void HandleUI(void)
 				}
 
 				if (addon[0] == 'f' && addon[1] == '1') process_addon(addon, idx);
+
+				if (loader_bg != -1)
+				{
+					if (!loader_bg)
+						fade_out_screen();
+					else					
+						video_fb_enable(0);
+				}		
 			}
 
 			mgl->state = 3;
@@ -6979,6 +7032,8 @@ void HandleUI(void)
 				}
 
 				int n = 8;
+				getTapTo();
+				if (tapto) str[n++] = 5;				
 				if (getNet(2)) str[n++] = 0x1d;
 				if (getNet(1)) str[n++] = 0x1c;
 				if (hci_get_route(0) >= 0) str[n++] = 4;
@@ -7338,6 +7393,6 @@ void ProgressMessage(const char* title, const char* text, int current, int max)
 		for (int i = 0; i <= new_progress; i++) buf[i] = (i < new_progress) ? 0x7F : c;
 		buf[PROGRESS_CNT] = 0;
 
-		InfoMessage(progress_buf, 2000, title);
+		if (loader_bg) InfoMessage(progress_buf, 2000, title);
 	}
 }
