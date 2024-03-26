@@ -98,6 +98,7 @@ typedef struct {
 	char osd_lock[25];
 	uint16_t osd_lock_time;
 	char loading_txt_up;
+	char waiting_txt_up;
 } cfg_t;
 
 extern cfg_t cfg;
