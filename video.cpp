@@ -26,6 +26,7 @@
 #include "str_util.h"
 #include "profiling.h"
 #include "offload.h"
+#include "tapto.h"
 
 #include "support.h"
 #include "lib/imlib2/Imlib2.h"
@@ -3509,6 +3510,8 @@ void video_menu_bg(int n, int idle)
 				draw_black();
 				break;
 			}
+
+			if (idle > 0) tapto_waiting(menu_bgn, bg1, bg2);
 		}
 
 		if (cfg.logo && logo && !idle)
