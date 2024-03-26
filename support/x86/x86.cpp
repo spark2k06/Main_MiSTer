@@ -48,6 +48,8 @@
 
 #define SHMEM_ADDR  0x30000000
 
+#define APPID_OFFSET 0x40
+
 #define IOWR(base, reg, value) x86_dma_set((base) + (reg), value)
 
 unsigned int hdd_table[128][3] = {
@@ -656,10 +658,12 @@ void x86_init()
 		0x00, //0x3E: ?
 		0x00, //0x3F: ?
 
+		0, 0, 0, 0, 0, 0, 0, 0,	// 0x40 - 0x47: Launcher appid 
+		
 		0, 0, 0, 0, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0, 0, 0
+		0, 0, 0, 0, 0, 0, 0, 0
 	};
 
 	//count checksum
@@ -832,4 +836,17 @@ const char* x86_get_image_name(int num)
 const char* x86_get_image_path(int num)
 {
 	return config.img_name[num];
+}
+
+void x86_set_appid(char *appid) {
+    if (appid != NULL) {
+        int appidLen = strlen(appid);
+        int missingBytes = 8 - appidLen;
+        for (int i = 0; i < missingBytes; ++i) {
+            IOWR(RTC_BASE, APPID_OFFSET + 7 - i, 0x00);
+        }
+        for (int i = 0; i < appidLen; ++i) {
+            IOWR(RTC_BASE, APPID_OFFSET + 7 - i - missingBytes, appid[i]);
+        }
+    }
 }
