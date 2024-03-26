@@ -1418,6 +1418,35 @@ static int scan_mgl(XMLEvent evt, const XMLNode* node, SXML_CHAR* text, const in
 				printf("  action=reset\n  delay=%d\n  hold=%d\n\n", mgl.item[mgl.count].delay, mgl.item[mgl.count].hold);
 				if (mgl.item[mgl.count].valid) mgl.count++;
 			}
+			else if (!strcasecmp(node->tag, "x86_launcher"))
+			{
+				mgl.item[mgl.count].action = MGL_ACTION_X86_LAUNCHER;
+
+				for (int i = 0; i < node->n_attributes; i++)
+				{
+					if (!strcasecmp(node->attributes[i].name, "delay"))
+					{
+						mgl.item[mgl.count].delay = strtoul(node->attributes[i].value, NULL, 0);
+						mgl.item[mgl.count].valid |= 2;
+					}
+					else if (!strcasecmp(node->attributes[i].name, "appid"))
+					{
+						snprintf(mgl.item[mgl.count].x86_appid, sizeof(mgl.item[mgl.count].x86_appid), "%s", node->attributes[i].value);
+						mgl.item[mgl.count].valid |= 4;
+					}
+				}
+
+				printf("  action=x86_launcher\n  appid=%s\n  delay=%d\n\n", mgl.item[mgl.count].x86_appid, mgl.item[mgl.count].delay);
+				if (mgl.item[mgl.count].valid == 0x6)
+				{
+					mgl.item[mgl.count].valid = 1;
+					mgl.count++;
+				}
+				else
+				{
+					mgl.item[mgl.count].valid = 0;
+				}
+			}
 			else if (!strcasecmp(node->tag, "fade_in"))
 			{
 				mgl.item[mgl.count].action = MGL_ACTION_FADE_IN;
