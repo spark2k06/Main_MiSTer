@@ -2456,7 +2456,7 @@ void HandleUI(void)
 
 			if (selPath[0])
 			{
-				if (loader_bg != -1) fade_in_screen(selPath, CoreName);
+				if (loader_bg != -1 && !mgl->done) fade_in_screen(selPath, CoreName);
 
 				char idx = user_io_ext_idx(selPath, fs_pFileExt) << 6 | ioctl_index;
 				if (addon[0] == 'f' && addon[1] != '1') process_addon(addon, idx);
@@ -2489,7 +2489,7 @@ void HandleUI(void)
 
 				if (addon[0] == 'f' && addon[1] == '1') process_addon(addon, idx);
 
-				if (loader_bg != -1)
+				if (loader_bg != -1 && !mgl->done)
 				{
 					if (!loader_bg)
 						fade_out_screen();
