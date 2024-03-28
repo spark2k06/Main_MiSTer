@@ -68,7 +68,8 @@ Imlib_Image load_loading_txt()
 
 }
 
-Imlib_Image load_cover_img(const char *s, char *coreDir) {
+Imlib_Image load_cover_img(const char *s)
+{
     Imlib_Load_Error error;
     static char full_path[1024];
 
@@ -81,18 +82,10 @@ Imlib_Image load_cover_img(const char *s, char *coreDir) {
     bool isPng = strncmp(lastDot, ".png", 4) == 0;
     int filenameLength = isPng ? strlen(lastSlash + 1) : lastDot - lastSlash - 1;
 
-    if (coreDir && coreDir[0] != '\0') {
-        if (isPng) {
-            snprintf(full_path, sizeof(full_path), "%s/%s/%s/%s", getRootDir(), COVERS_DIR, coreDir, lastSlash + 1);
-        } else {
-            snprintf(full_path, sizeof(full_path), "%s/%s/%s/%.*s.png", getRootDir(), COVERS_DIR, coreDir, filenameLength, lastSlash + 1);
-        }
+    if (isPng) {
+        snprintf(full_path, sizeof(full_path), "%s/%s/%s", getRootDir(), covers_dir, lastSlash + 1);
     } else {
-        if (isPng) {
-            snprintf(full_path, sizeof(full_path), "%s/%s/%s", getRootDir(), COVERS_DIR, lastSlash + 1);
-        } else {
-            snprintf(full_path, sizeof(full_path), "%s/%s/%.*s.png", getRootDir(), COVERS_DIR, filenameLength, lastSlash + 1);
-        }
+        snprintf(full_path, sizeof(full_path), "%s/%s/%.*s.png", getRootDir(), covers_dir, filenameLength, lastSlash + 1);
     }
 
     printf("cover: %s\n", full_path);
@@ -115,12 +108,12 @@ Imlib_Image load_cover_img(const char *s, char *coreDir) {
     return img;
 }
 
-void fade_in_screen(const char *s, char *coreDir) {
+void fade_in_screen(const char *s) {
     static Imlib_Image screen_bg = 0;
     static Imlib_Image cover_img = 0;
     static Imlib_Image loading_txt = 0;
     if (!screen_bg) screen_bg = load_screen_bg();
-    if (!cover_img) cover_img = load_cover_img(s, coreDir);
+    if (!cover_img) cover_img = load_cover_img(s);
     if (!loading_txt) loading_txt = load_loading_txt();
 
     if (screen_bg) {

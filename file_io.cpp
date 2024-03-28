@@ -54,6 +54,7 @@ DirNameSet DirNames;
 // leaking the file descriptor when the user changes cores
 
 char config_dir[64] = {0};
+char covers_dir[64] = {0};
 static mz_zip_archive last_zip_archive = {};
 static int last_zip_fd = -1;
 static FILE *last_zip_cfile = NULL;

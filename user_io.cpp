@@ -1321,7 +1321,7 @@ void user_io_init(const char *path, const char *xml)
 	// we need to set the directory to where the XML file (MRA) is
 	// not the RBF. The RBF will be in arcade, which the user shouldn't
 	// browse
-	strcpy(core_path, xml ? xml : path);
+	strcpy(core_path, xml ? xml : path);	
 	strcpy(rbf_path, path);
 
 	memset(sd_image, 0, sizeof(sd_image));
@@ -1370,6 +1370,7 @@ void user_io_init(const char *path, const char *xml)
 	user_io_read_core_name();
 
 	if (ovr_cfgcore_subfolder) sprintf(config_dir, "%s/%s", CONFIG_DIR, user_io_get_core_name(1));
+	if (ovr_cfgcore_subfolder) sprintf(covers_dir, "%s/%s", COVERS_DIR, user_io_get_core_name(1));
 
 	if ((fpga_get_buttons() & BUTTON_OSD) && is_menu())
 	{
@@ -1381,20 +1382,27 @@ void user_io_init(const char *path, const char *xml)
 	cfg_print();
 
 	if (!ovr_cfgcore_subfolder)
-	{
+	{		
+		sprintf(covers_dir, "%s/%s", COVERS_DIR, (xml && strstr(xml, ".mra")) ? cfg.cfgarcade_subfolder[0] ? cfg.cfgarcade_subfolder : "Arcade" : user_io_get_core_name());		
 		if (cfg.cfgcore_subfolder[0])
-		{
-			sprintf(config_dir, "%s/%s", CONFIG_DIR, cfg.cfgcore_subfolder);		
+		{			
+			sprintf(config_dir, "%s/%s", CONFIG_DIR, (cfg.cfgarcade_subfolder[0] && xml && strstr(xml, ".mra")) ? cfg.cfgarcade_subfolder : cfg.cfgcore_subfolder);					
 		}
 		else
 		{
-			sprintf(config_dir, "%s", CONFIG_DIR);
+			if (cfg.cfgarcade_subfolder[0] && xml && strstr(xml, ".mra"))
+			{
+				sprintf(config_dir, "%s/%s", CONFIG_DIR, cfg.cfgarcade_subfolder);
+			}
+			else
+			{
+				sprintf(config_dir, "%s", CONFIG_DIR);
+			}			
 		}
 	}
 
 	sprintf(full_config_dir, "%s/%s", getRootDir(), config_dir);
 	FileCreatePath(full_config_dir);
-
 
 	while (cfg.waitmount[0] && !is_menu())
 	{

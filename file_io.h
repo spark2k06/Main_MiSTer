@@ -149,6 +149,7 @@ const char* FileReadLine(fileTextReader *reader);
 #define CIFS_DIR "cifs"
 #define DOCS_DIR "docs"
 #define COVERS_DIR "covers"
+extern char covers_dir[64];
 
 void create_path(const char *base_dir, const char* sub_dir);
 
