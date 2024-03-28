@@ -61,7 +61,9 @@ void arcade_nvm_save()
 {
 	if(nvram_idx && nvram_size)
 	{
-		char path[256] = CONFIG_DIR"/nvram/";
+		char path[256] = {0};
+		strcat(path, config_dir);
+		strcat(path, "/nvram/");
 		FileCreatePath(path);
 		strcat(path, nvram_name);
 
@@ -131,7 +133,14 @@ void arcade_sw_save(int n)
 	if (sw->dip_num && sw->dip_saved != sw->dip_cur)
 	{
 		static char path[1024];
-		strcpy(path, (n) ? CONFIG_DIR"/cheats/" : CONFIG_DIR"/dips/");
+		if (n)
+		{
+			sprintf(path, "%s/cheats/", config_dir);
+		}
+		else
+		{
+			sprintf(path, "%s/dips/", config_dir);
+		}
 		FileCreatePath(path);
 		strcat(path, sw->name);
 		if (FileSave(path, &sw->dip_cur, sizeof(sw->dip_cur)))
@@ -996,6 +1005,7 @@ static int xml_read_pre_parse(XMLEvent evt, const XMLNode* node, SXML_CHAR* text
 	static bool insetname = false;
 	static bool inrotation = false;
 	static int  samedir = 0;
+	static int  cfgcore_subfolder = 0;
 
 	static bool foundsetname = false;
 	static bool foundrotation = false;
@@ -1008,6 +1018,7 @@ static int xml_read_pre_parse(XMLEvent evt, const XMLNode* node, SXML_CHAR* text
 		foundsetname = false;
 		foundrotation = false;
 		samedir = 0;
+		cfgcore_subfolder = 0;
 		break;
 
 	case XML_EVENT_START_NODE:
@@ -1019,6 +1030,7 @@ static int xml_read_pre_parse(XMLEvent evt, const XMLNode* node, SXML_CHAR* text
 			for (int i = 0; i < node->n_attributes; i++)
 			{
 				if (!strcasecmp(node->attributes[i].name, "same_dir") && !strcmp(node->attributes[i].value, "1")) samedir = 1;
+				if (!strcasecmp(node->attributes[i].name, "cfgcore_subfolder") && !strcmp(node->attributes[i].value, "1")) cfgcore_subfolder = 1;
 			}
 		}
 		else if (!strcasecmp(node->tag, "rotation"))
@@ -1029,7 +1041,7 @@ static int xml_read_pre_parse(XMLEvent evt, const XMLNode* node, SXML_CHAR* text
 		break;
 
 	case XML_EVENT_TEXT:
-		if(insetname) user_io_name_override(text, samedir);
+		if(insetname) user_io_name_override(text, samedir, cfgcore_subfolder);
 		if(inrotation)
 		{
 			is_vertical = strncasecmp(text, "vertical", 8) == 0;

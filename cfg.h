@@ -101,6 +101,7 @@ typedef struct {
 	char main[1024];
 	char loading_txt_up;
 	char waiting_txt_up;
+	char cfgcore_subfolder[32];
 } cfg_t;
 
 extern cfg_t cfg;
