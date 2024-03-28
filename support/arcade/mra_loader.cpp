@@ -1376,9 +1376,9 @@ static int scan_mgl(XMLEvent evt, const XMLNode* node, SXML_CHAR* text, const in
 						mgl.item[mgl.count].delay = strtoul(node->attributes[i].value, NULL, 0);
 						mgl.item[mgl.count].valid = 1;
 					}
-					else if (!strcasecmp(node->attributes[i].name, "path"))
+					else if (!strcasecmp(node->attributes[i].name, "cover"))
 					{
-						snprintf(mgl.item[mgl.count].path, sizeof(mgl.item[mgl.count].path), "%s", node->attributes[i].value);
+						snprintf(mgl.item[mgl.count].path, sizeof(mgl.item[mgl.count].path), "/%s", node->attributes[i].value);
 					}
 					else if (!strcasecmp(node->attributes[i].name, "mute"))
 					{
