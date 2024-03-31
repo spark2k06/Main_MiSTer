@@ -6,7 +6,7 @@ For the purposes of getting google to crawl the wiki, here's a link to the (not 
 
 If you're a human looking for the wiki, that's [here](https://github.com/MiSTer-devel/Wiki_MiSTer/wiki)
 
-# new-features branch
+# aitorgomez fork
 
 This *fork* of the original **MiSTer** project includes a number of features aimed at integrating with the [TapTo](https://github.com/wizzomafizzo/tapto) project by [wizzo](https://wizzo.dev/), as well as others related to displaying a screen while loading games. Both features are optional, however, as of today, they have not been approved for the [original repository](https://github.com/MiSTer-devel/Main_MiSTer), which is, of course, understandable and respectable.
 
