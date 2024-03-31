@@ -1006,6 +1006,7 @@ static int xml_read_pre_parse(XMLEvent evt, const XMLNode* node, SXML_CHAR* text
 	static bool inrotation = false;
 	static int  samedir = 0;
 	static int  cfgcore_subfolder = 0;
+	static char logo_loading[32] = {};
 
 	static bool foundsetname = false;
 	static bool foundrotation = false;
@@ -1030,7 +1031,8 @@ static int xml_read_pre_parse(XMLEvent evt, const XMLNode* node, SXML_CHAR* text
 			for (int i = 0; i < node->n_attributes; i++)
 			{
 				if (!strcasecmp(node->attributes[i].name, "same_dir") && !strcmp(node->attributes[i].value, "1")) samedir = 1;
-				if (!strcasecmp(node->attributes[i].name, "cfgcore_subfolder") && !strcmp(node->attributes[i].value, "1")) cfgcore_subfolder = 1;
+				else if (!strcasecmp(node->attributes[i].name, "cfgcore_subfolder") && !strcmp(node->attributes[i].value, "1")) cfgcore_subfolder = 1;
+				else if (!strcasecmp(node->attributes[i].name, "logo_loading")) snprintf(logo_loading, sizeof(logo_loading), "%s", node->attributes[i].value);
 			}
 		}
 		else if (!strcasecmp(node->tag, "rotation"))
@@ -1041,7 +1043,7 @@ static int xml_read_pre_parse(XMLEvent evt, const XMLNode* node, SXML_CHAR* text
 		break;
 
 	case XML_EVENT_TEXT:
-		if(insetname) user_io_name_override(text, samedir, cfgcore_subfolder);
+		if(insetname) user_io_name_override(text, samedir, cfgcore_subfolder, logo_loading);
 		if(inrotation)
 		{
 			is_vertical = strncasecmp(text, "vertical", 8) == 0;

@@ -12,6 +12,7 @@
 #include "video.h"
 #include "menu.h"
 #include "cfg.h"
+#include "user_io.h"
 
 #define FB_SIZE  (1920*1080)
 
@@ -68,6 +69,41 @@ Imlib_Image load_loading_txt()
 
 }
 
+Imlib_Image load_logo_img()
+{
+    Imlib_Load_Error error;
+    static char* fname = user_io_get_core_name(1);
+    static char full_path[1024];
+    fname = ovr_logo_loading[0] ? ovr_logo_loading : strstr(fname, "JT") ? ((char*)"jotego") : fname;
+    
+    snprintf(full_path, sizeof(full_path), "%s/%s/%s.png", getRootDir(), COVERS_DIR, fname);
+    
+    if (!FileExists(full_path)) 
+    {
+        snprintf(full_path, sizeof(full_path), "%s/%s/mister.png", getRootDir(), COVERS_DIR);
+    }
+
+
+    printf("logo: %s\n", full_path);
+    Imlib_Image img = NULL;
+    if (FileExists(full_path)) {
+        img = imlib_load_image_with_error_return(full_path, &error);
+        if (!img) {
+            printf("Image %s loading error %d\n", full_path, error);
+            return NULL;
+        } else {
+            imlib_context_set_image(img);
+            int cover_w = imlib_image_get_width();
+            int cover_h = imlib_image_get_height();
+            if (cover_w != 64 || cover_h != 64) {
+                printf("Logo image dimensions are not as expected\n");
+                return NULL;
+            }
+        }
+    }
+    return img;
+}
+
 Imlib_Image load_cover_img(const char *s)
 {
     Imlib_Load_Error error;
@@ -112,9 +148,11 @@ void fade_in_screen(const char *s) {
     static Imlib_Image screen_bg = 0;
     static Imlib_Image cover_img = 0;
     static Imlib_Image loading_txt = 0;
+    static Imlib_Image logo_img = 0;
     if (!screen_bg) screen_bg = load_screen_bg();
-    if (!cover_img) cover_img = load_cover_img(s);
+    if (!cover_img) cover_img = load_cover_img(s);    
     if (!loading_txt) loading_txt = load_loading_txt();
+    if (!logo_img) logo_img = load_logo_img();
 
     if (screen_bg) {
         static Imlib_Image bg1 = 0;
@@ -128,7 +166,8 @@ void fade_in_screen(const char *s) {
         int src_w = imlib_image_get_width();
         int src_h = imlib_image_get_height();
 
-        int loading_x = (fb_width - 448) / 2;
+        int loading_x = ((fb_width - 448) / 2) + (logo_img ? 32 : 0);
+        int logo_x = (fb_width - 512) / 2;
         int loading_y = (fb_height - 64) / 2;
 
         if (cover_img) {
@@ -141,11 +180,13 @@ void fade_in_screen(const char *s) {
             imlib_blend_image_onto_image(screen_bg, 0, 0, 0, src_w, src_h, 0, 0, fb_width, fb_height);
             imlib_blend_image_onto_image(cover_img, 0, 0, 0, 256, 320, cover_x, cover_y, 256, 320);
             if (loading_txt) imlib_blend_image_onto_image(loading_txt, 0, 0, 0, 448, 64, loading_x, loading_y_cover, 448, 64);
+            if (logo_img) imlib_blend_image_onto_image(logo_img, 0, 0, 0, 64, 64, logo_x, loading_y_cover, 64, 64);
 
             imlib_context_set_image(bg2);
             imlib_blend_image_onto_image(screen_bg, 0, 0, 0, src_w, src_h, 0, 0, fb_width, fb_height);
             imlib_blend_image_onto_image(cover_img, 0, 0, 0, 256, 320, cover_x, cover_y, 256, 320);
             if (loading_txt) imlib_blend_image_onto_image(loading_txt, 0, 0, 0, 448, 64, loading_x, loading_y_cover, 448, 64);
+            if (logo_img) imlib_blend_image_onto_image(logo_img, 0, 0, 0, 64, 64, logo_x, loading_y_cover, 64, 64);
         }
         
         else
@@ -154,10 +195,12 @@ void fade_in_screen(const char *s) {
             imlib_context_set_image(bg1);
             imlib_blend_image_onto_image(screen_bg, 0, 0, 0, src_w, src_h, 0, 0, fb_width, fb_height);
             if (loading_txt) imlib_blend_image_onto_image(loading_txt, 0, 0, 0, 448, 64, loading_x, loading_y, 448, 64);
+            if (logo_img) imlib_blend_image_onto_image(logo_img, 0, 0, 0, 64, 64, logo_x, loading_y, 64, 64);
             
             imlib_context_set_image(bg2);
             imlib_blend_image_onto_image(screen_bg, 0, 0, 0, src_w, src_h, 0, 0, fb_width, fb_height);
             if (loading_txt) imlib_blend_image_onto_image(loading_txt, 0, 0, 0, 448, 64, loading_x, loading_y, 448, 64);
+            if (logo_img) imlib_blend_image_onto_image(logo_img, 0, 0, 0, 64, 64, logo_x, loading_y, 64, 64);
 
         }
         

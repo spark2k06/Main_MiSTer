@@ -143,6 +143,7 @@ static char ovr_name[32] = {};
 static char orig_name[32] = {};
 static int  ovr_samedir = 0;
 int ovr_cfgcore_subfolder = 0;
+char ovr_logo_loading[32] = {0};
 
 char *user_io_make_filepath(const char *path, const char *filename)
 {
@@ -151,11 +152,12 @@ char *user_io_make_filepath(const char *path, const char *filename)
 	return filepath_store;
 }
 
-void user_io_name_override(const char* name, int samedir, int cfgcore_subfolder)
+void user_io_name_override(const char* name, int samedir, int cfgcore_subfolder, const char* logo_loading)
 {
 	snprintf(ovr_name, sizeof(ovr_name), "%s", name);
 	ovr_samedir = samedir;
 	ovr_cfgcore_subfolder = cfgcore_subfolder;
+	if (logo_loading) snprintf(ovr_logo_loading, sizeof(ovr_logo_loading), "%s", logo_loading);
 }
 
 void user_io_set_core_name(const char *name)
