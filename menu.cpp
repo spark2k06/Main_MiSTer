@@ -1033,7 +1033,7 @@ void HandleUI(void)
 					else
 						set_volume(0x80, 1);
 
-					fade_in_screen(mgl->item[mgl->current].path);
+					fade_in_screen(mgl->item[mgl->current].path, mgl->item[mgl->current].logo);
 					mgl->state = 3;
 				}
 				else if (mgl->item[mgl->current].action == MGL_ACTION_X86_LAUNCHER)
@@ -2457,7 +2457,7 @@ void HandleUI(void)
 
 			if (selPath[0])
 			{
-				if (loader_bg != -1 && !mgl->done) fade_in_screen(selPath);
+				if (loader_bg != -1 && !mgl->done) fade_in_screen(selPath, NULL);
 
 				char idx = user_io_ext_idx(selPath, fs_pFileExt) << 6 | ioctl_index;
 				if (addon[0] == 'f' && addon[1] != '1') process_addon(addon, idx);

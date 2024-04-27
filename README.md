@@ -91,9 +91,9 @@ In order to facilitate the integration of both features in cores where interacti
     * **mute**: Attribute to mute the audio by setting it to 1, useful to avoid the **BIOS** beeps.
     * **cover**: Attribute to indicate the cover filename. If not in cover path and corresponding subfolder, only the loading text will be displayed.
 
-* **cfgcore_subfolder** attribute of **setname** tag allows to use and save the core configurations in a subfolder separate from the one used by default in the core.
+    * **logo** Attribute to indicate the use of a custom logo located in the covers directory. It will use the logo indicated by this attribute, and it has to be of **png** type, **64x64** and with alpha channel. If this attribute is not indicated, it will search in the same folder for the one that matches the original name of the core, and if it does not find it, it will search for **mister.png**. If the latter is not found either, the loading text will appear centred and without the associated logo.
 
-* **logo_loading** attribute of the **setname** tag allows the use of a custom logo located in the covers directory. It will use the logo indicated by this attribute, and it has to be of **png** type, **64x64** and with alpha channel. If this attribute is not indicated, it will search in the same folder for the one that matches the original name of the core, and if it does not find it, it will search for **mister.png**. If the latter is not found either, the loading text will appear centred and without the associated logo.
+* **cfgcore_subfolder** attribute of **setname** tag allows to use and save the core configurations in a subfolder separate from the one used by default in the core.
 
 * **x86_launcher**: Transfers the value of the **AppId** attribute (max 8 chars) to the **CMOS** memory of the **x86** core, specifically to position **0x40**. It will then be possible to manage it with the [LAUNCHER.EXE](#launcherexe-utility) tool from **MS/Dos**.
 
@@ -106,8 +106,8 @@ Example of use in **PC/XT**:
 ```xml
 <mistergamedescription>
     <rbf>_Computer/PCXT</rbf>
-    <setname same_dir="1" cfgcore_subfolder="1" logo_loading="Tandy1000">AlleyCat</setname>
-    <fade_in delay="0" mute="1" cover="AlleyCat.png"/>
+    <setname same_dir="1" cfgcore_subfolder="1">AlleyCat</setname>
+    <fade_in delay="0" mute="1" cover="AlleyCat.png" logo="Tandy1000"/>
     <file delay="1" type="s" index="2" path="/media/fat/games/PCXT/HDD/PCXT_CGA_Tandy_2.3.1.vhd"/>
     <reset delay="1"/>
     <x86_launcher delay="1" appid="ALLEYCAT"/>
@@ -120,8 +120,7 @@ Example of use in **ao486**:
 ```xml
 <mistergamedescription>
     <rbf>_Computer/ao486</rbf>
-    <setname same_dir="1" cfgcore_subfolder="1">Wolf3D</setname>
-    <fade_in delay="0" mute="1" cover="Wolf3D.png"/>
+    <fade_in delay="0" mute="1" cover="Wolf3D.png" logo="ao486"/>
     <file delay="1" type="s" index="3" path="/media/fat/games/ao486/UnRETROPC.vhd"/>
     <reset delay="1"/>
     <x86_launcher delay="1" appid="WOLF3D"/>
