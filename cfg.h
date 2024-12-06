@@ -100,6 +100,10 @@ typedef struct {
 	char debug;
 	char main[1024];
 	char vfilter_interlace_default[1023];
+	char loading_txt_up;
+	char waiting_txt_up;
+	char cfgcore_subfolder[32];
+	char cfgarcade_subfolder[32];
 } cfg_t;
 
 extern cfg_t cfg;

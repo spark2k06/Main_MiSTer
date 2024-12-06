@@ -1,7 +1,7 @@
 #ifndef AUDIO_H
 #define AUDIO_H
 
-void set_volume(int cmd);
+void set_volume(int cmd, char noinfo=0);
 int  get_volume();
 int  get_core_volume();
 void set_core_volume(int cmd);
