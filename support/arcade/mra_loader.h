@@ -47,6 +47,7 @@ struct mgl_item_struct
 	int  submenu;
 	int  action;
 	int  mute;
+	char logo[32];
 	char x86_appid[9];
 };
 
