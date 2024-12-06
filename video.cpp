@@ -27,6 +27,7 @@
 #include "profiling.h"
 #include "offload.h"
 #include "hdmi_cec.h"
+#include "zaparoo.h"
 
 #include "support.h"
 #include "support/arcade/mra_loader.h"
@@ -4023,6 +4024,8 @@ void video_menu_bg(int n, int idle)
 				draw_black();
 				break;
 			}
+
+			if (idle > 0) zaparoo_waiting(menu_bgn, bg1, bg2);
 		}
 
 		if (cfg.logo && logo && !idle)
