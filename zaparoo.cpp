@@ -16,6 +16,8 @@
 #include "video.h"
 #include "cfg.h"
 
+#define SCALE_DIM(dim, ref, target) ((dim) * (target) / (ref))
+
 char* zaparoo = NULL;
 
 Imlib_Image load_zaparoo_img(const char* s)
@@ -136,6 +138,10 @@ bool zaparoo_waiting(int menu_bgn, Imlib_Image bg1, Imlib_Image bg2)
     static Imlib_Image waiting_img = 0;
     static bool zaparoo_state = false;
 
+    static int scale_x_512 = SCALE_DIM(512, 1366, fb_width);
+    static int scale_y_384 = SCALE_DIM(384, 768, fb_height);
+    static int scale_y_64 = SCALE_DIM(64, 768, fb_height);
+
     if (zaparoo && !zaparoo_img_1) zaparoo_img_1 = load_zaparoo_img("1");
     if (zaparoo && !zaparoo_img_2) zaparoo_img_2 = load_zaparoo_img("2");
     if (!waiting_img) waiting_img = load_waiting_img();
@@ -144,23 +150,23 @@ bool zaparoo_waiting(int menu_bgn, Imlib_Image bg1, Imlib_Image bg2)
     zaparoo_state = !zaparoo_state;
     if (zaparoo && zaparoo_img_1 && zaparoo_img_2)
     {					
-        int zaparoo_x = (fb_width - 512) / 2;
-        int zaparoo_y = (fb_height - 384) / (cfg.waiting_txt_up ? 1.5 : 2);
+        int zaparoo_x = (fb_width - scale_x_512) / 2;
+        int zaparoo_y = (fb_height - scale_y_384) / (cfg.waiting_txt_up ? 1.5 : 2);
         imlib_blend_image_onto_image(zaparoo_state ? zaparoo_img_1 : zaparoo_img_2, 1,
             0, 0,
             512, 384,
             zaparoo_x, zaparoo_y,
-            512, 384
+            scale_x_512, scale_y_384
         );
         if (waiting_img)
         {
-            int waiting_x = (fb_width - 512) / 2;
-            int waiting_y = (fb_height - 64) / (cfg.waiting_txt_up ? 4 : 1.27);
+            int waiting_x = (fb_width - scale_x_512) / 2;
+            int waiting_y = (fb_height - scale_y_64) / (cfg.waiting_txt_up ? 4 : 1.27);
             imlib_blend_image_onto_image(waiting_img, 1,
                 0, 0,
                 512, 64,
                 waiting_x, waiting_y,
-                512, 64
+                scale_x_512, scale_y_64
             );
         }
         return true;
@@ -170,4 +176,3 @@ bool zaparoo_waiting(int menu_bgn, Imlib_Image bg1, Imlib_Image bg2)
         return false;
     }
 }
-
