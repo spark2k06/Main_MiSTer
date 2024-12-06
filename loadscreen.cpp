@@ -69,13 +69,13 @@ Imlib_Image load_loading_txt()
 
 }
 
-Imlib_Image load_logo_img()
+Imlib_Image load_logo_img(const char *logo)
 {
     Imlib_Load_Error error;
     static char* fname = user_io_get_core_name(1);
-    static char full_path[1024];
-    fname = ovr_logo_loading[0] ? ovr_logo_loading : strstr(fname, "JT") ? ((char*)"jotego") : fname;
     
+    static char full_path[1024];
+    fname = logo != NULL && logo[0] ? (char*)logo : strstr(fname, "JT") ? ((char*)"jotego") : fname;
     snprintf(full_path, sizeof(full_path), "%s/%s/%s.png", getRootDir(), COVERS_DIR, fname);
     
     if (!FileExists(full_path)) 
@@ -104,15 +104,15 @@ Imlib_Image load_logo_img()
     return img;
 }
 
-Imlib_Image load_cover_img(const char *s)
+Imlib_Image load_cover_img(const char *cover)
 {
     Imlib_Load_Error error;
     static char full_path[1024];
 
-    const char *lastDot = strrchr(s, '.');
-    if (!lastDot || lastDot == s) return NULL;
+    const char *lastDot = strrchr(cover, '.');
+    if (!lastDot || lastDot == cover) return NULL;
 
-    const char *lastSlash = strrchr(s, '/');
+    const char *lastSlash = strrchr(cover, '/');
     if (!lastSlash) return NULL;
 
     bool isPng = strncmp(lastDot, ".png", 4) == 0;
@@ -144,7 +144,7 @@ Imlib_Image load_cover_img(const char *s)
     return img;
 }
 
-void fade_in_screen(const char *s) {
+void fade_in_screen(const char *cover, const char *logo) {
     static Imlib_Image screen_bg = 0;
     static Imlib_Image cover_img = 0;
     static Imlib_Image loading_txt = 0;
@@ -159,9 +159,9 @@ void fade_in_screen(const char *s) {
     static int scale_y_64 = SCALE_DIM(64, 768, fb_height);
 
     if (!screen_bg) screen_bg = load_screen_bg();
-    if (!cover_img) cover_img = load_cover_img(s);    
+    if (!cover_img) cover_img = load_cover_img(cover);    
     if (!loading_txt) loading_txt = load_loading_txt();
-    if (!logo_img) logo_img = load_logo_img();
+    if (!logo_img) logo_img = load_logo_img(logo);
 
     if (screen_bg) {
         static Imlib_Image bg1 = 0;

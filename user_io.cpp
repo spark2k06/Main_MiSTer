@@ -143,7 +143,6 @@ static char ovr_name[32] = {};
 static char orig_name[32] = {};
 static int  ovr_samedir = 0;
 int ovr_cfgcore_subfolder = 0;
-char ovr_logo_loading[32] = {0};
 
 char *user_io_make_filepath(const char *path, const char *filename)
 {
@@ -152,12 +151,11 @@ char *user_io_make_filepath(const char *path, const char *filename)
 	return filepath_store;
 }
 
-void user_io_name_override(const char* name, int samedir, int cfgcore_subfolder, const char* logo_loading)
+void user_io_name_override(const char* name, int samedir, int cfgcore_subfolder)
 {
 	snprintf(ovr_name, sizeof(ovr_name), "%s", name);
 	ovr_samedir = samedir;
 	ovr_cfgcore_subfolder = cfgcore_subfolder;
-	if (logo_loading) snprintf(ovr_logo_loading, sizeof(ovr_logo_loading), "%s", logo_loading);
 }
 
 void user_io_set_core_name(const char *name)
@@ -1516,7 +1514,7 @@ void user_io_init(const char *path, const char *xml)
 					load_screen_bg();
 					if (loader_bg != -1)
 					{
-						fade_in_screen(xml);
+						fade_in_screen(xml, NULL);
 						arcade_send_rom(xml);
 						if (!loader_bg)
 							fade_out_screen();
@@ -4206,17 +4204,6 @@ bool user_io_screenshot(const char *pngname, int rescale)
 	}
 	else
 	{
-    int scwidth = ms->output_width;
-    int scheight = ms->output_height;
-
-    if (video_get_rotated())
-    {
-
-      //If the video is rotated, the scaled output resolution results in a squished image.
-      //Calculate the scaled output res using the original AR
-      scwidth = scheight * ((float)ms->width/ms->height);
-    }
-
 		const char *basename = last_filename;
 		if( pngname && *pngname )
 			basename = pngname;
@@ -4233,7 +4220,7 @@ bool user_io_screenshot(const char *pngname, int rescale)
 		/* do we want to save a rescaled image? */
 		if (rescale)
 		{
-			Imlib_Image im_scaled=imlib_create_cropped_scaled_image(0,0,ms->width,ms->height,scwidth,scheight);
+			Imlib_Image im_scaled=imlib_create_cropped_scaled_image(0,0,ms->width,ms->height,ms->output_width,ms->output_height);
 			imlib_free_image_and_decache();
 			imlib_context_set_image(im_scaled);
 		}
