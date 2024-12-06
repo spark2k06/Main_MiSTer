@@ -64,6 +64,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "bootcore.h"
 #include "ide.h"
 #include "profiling.h"
+#include "zaparoo.h"
 #include "loadscreen.h"
 
 /*menu states*/
@@ -688,6 +689,12 @@ static void printSysInfo()
 		OsdWrite(n++, info_top, 0, 0);
 
 		int j = 0;
+		if (zaparoo)
+		{
+			sprintf(str, "\x05 %s", zaparoo);
+			infowrite(n++, str);
+			j++;
+		}
 		char *net;
 		net = getNet(1);
 		if (net)
@@ -1130,6 +1137,7 @@ void HandleUI(void)
 		static int menu_visible = 1;
 		static unsigned long timeout = 0;
 		static unsigned long off_timeout = 0;
+		static unsigned long zaparoo_xchg = 0;
 		if (!video_fb_state() && cfg.fb_terminal)
 		{
 			if (timeout && CheckTimer(timeout))
@@ -1139,6 +1147,7 @@ void HandleUI(void)
 				{
 					menu_visible = 0;
 					video_menu_bg(user_io_status_get("[3:1]"), 1);
+					zaparoo_xchg = GetTimer(100);
 					OsdMenuCtl(0);
 				}
 				else if (!menu_visible)
@@ -1149,9 +1158,16 @@ void HandleUI(void)
 				}
 			}
 
+			if (zaparoo_xchg && CheckTimer(zaparoo_xchg) && menu_visible <= 0)
+			{
+				video_menu_bg(user_io_status_get("[3:1]"), (menu_visible == 0) ? 1 : 2);
+				zaparoo_xchg = GetTimer(100);
+			}
+
 			if (off_timeout && CheckTimer(off_timeout) && menu_visible < 0)
 			{
 				off_timeout = 0;
+				zaparoo_xchg = 0;
 				video_menu_bg(user_io_status_get("[3:1]"), 3);
 			}
 
@@ -7088,6 +7104,8 @@ void HandleUI(void)
 				}
 
 				int n = 8;
+				getZaparoo();
+				if (zaparoo) str[n++] = 5;				
 				if (getNet(2)) str[n++] = 0x1d;
 				if (getNet(1)) str[n++] = 0x1c;
 				if (hci_get_route(0) >= 0) str[n++] = 4;
