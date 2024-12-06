@@ -15,7 +15,7 @@
 #include "user_io.h"
 
 #define FB_SIZE  (1920*1080)
-
+#define SCALE_DIM(dim, ref, target) ((dim) * (target) / (ref))
 
 Imlib_Image load_screen_bg()
 {
@@ -149,6 +149,15 @@ void fade_in_screen(const char *s) {
     static Imlib_Image cover_img = 0;
     static Imlib_Image loading_txt = 0;
     static Imlib_Image logo_img = 0;
+
+    static int scale_x_512 = SCALE_DIM(512, 1366, fb_width);
+    static int scale_x_448 = SCALE_DIM(448, 1366, fb_width);
+    static int scale_x_256 = SCALE_DIM(256, 1366, fb_width);
+    static int scale_x_64 = SCALE_DIM(64, 1366, fb_width);
+    static int scale_x_32 = SCALE_DIM(32, 1366, fb_width);
+    static int scale_y_320 = SCALE_DIM(320, 768, fb_height);
+    static int scale_y_64 = SCALE_DIM(64, 768, fb_height);
+
     if (!screen_bg) screen_bg = load_screen_bg();
     if (!cover_img) cover_img = load_cover_img(s);    
     if (!loading_txt) loading_txt = load_loading_txt();
@@ -166,27 +175,27 @@ void fade_in_screen(const char *s) {
         int src_w = imlib_image_get_width();
         int src_h = imlib_image_get_height();
 
-        int loading_x = ((fb_width - 448) / 2) + (logo_img ? 32 : 0);
-        int logo_x = (fb_width - 512) / 2;
-        int loading_y = (fb_height - 64) / 2;
+        int loading_x = ((fb_width - scale_x_448) / 2) + (logo_img ? scale_x_32 : 0);
+        int logo_x = (fb_width - scale_x_512) / 2;
+        int loading_y = (fb_height - scale_y_64) / 2;
 
         if (cover_img) {
             imlib_context_set_image(cover_img);
-            int cover_x = (fb_width - 256) / 2;
-            int cover_y = (fb_height - 320) / (cfg.loading_txt_up ? 1.75 : 2);
-            int loading_y_cover = (fb_height - 64) / (cfg.loading_txt_up ? 4 : 1.27);
+            int cover_x = (fb_width - scale_x_256) / 2;
+            int cover_y = (fb_height - scale_y_320) / (cfg.loading_txt_up ? 1.75 : 2);
+            int loading_y_cover = (fb_height - scale_y_64) / (cfg.loading_txt_up ? 4 : 1.27);
 
             imlib_context_set_image(bg1);
             imlib_blend_image_onto_image(screen_bg, 0, 0, 0, src_w, src_h, 0, 0, fb_width, fb_height);
-            imlib_blend_image_onto_image(cover_img, 0, 0, 0, 256, 320, cover_x, cover_y, 256, 320);
-            if (loading_txt) imlib_blend_image_onto_image(loading_txt, 0, 0, 0, 448, 64, loading_x, loading_y_cover, 448, 64);
-            if (logo_img) imlib_blend_image_onto_image(logo_img, 0, 0, 0, 64, 64, logo_x, loading_y_cover, 64, 64);
+            imlib_blend_image_onto_image(cover_img, 0, 0, 0, 256, 320, cover_x, cover_y, scale_x_256, scale_y_320);
+            if (loading_txt) imlib_blend_image_onto_image(loading_txt, 0, 0, 0, 448, 64, loading_x, loading_y_cover, scale_x_448, scale_y_64);
+            if (logo_img) imlib_blend_image_onto_image(logo_img, 0, 0, 0, 64, 64, logo_x, loading_y_cover, scale_x_64, scale_y_64);
 
             imlib_context_set_image(bg2);
             imlib_blend_image_onto_image(screen_bg, 0, 0, 0, src_w, src_h, 0, 0, fb_width, fb_height);
-            imlib_blend_image_onto_image(cover_img, 0, 0, 0, 256, 320, cover_x, cover_y, 256, 320);
-            if (loading_txt) imlib_blend_image_onto_image(loading_txt, 0, 0, 0, 448, 64, loading_x, loading_y_cover, 448, 64);
-            if (logo_img) imlib_blend_image_onto_image(logo_img, 0, 0, 0, 64, 64, logo_x, loading_y_cover, 64, 64);
+            imlib_blend_image_onto_image(cover_img, 0, 0, 0, 256, 320, cover_x, cover_y, scale_x_256, scale_y_320);
+            if (loading_txt) imlib_blend_image_onto_image(loading_txt, 0, 0, 0, 448, 64, loading_x, loading_y_cover, scale_x_448, scale_y_64);
+            if (logo_img) imlib_blend_image_onto_image(logo_img, 0, 0, 0, 64, 64, logo_x, loading_y_cover, scale_x_64, scale_y_64);
         }
         
         else
@@ -194,13 +203,13 @@ void fade_in_screen(const char *s) {
         {
             imlib_context_set_image(bg1);
             imlib_blend_image_onto_image(screen_bg, 0, 0, 0, src_w, src_h, 0, 0, fb_width, fb_height);
-            if (loading_txt) imlib_blend_image_onto_image(loading_txt, 0, 0, 0, 448, 64, loading_x, loading_y, 448, 64);
-            if (logo_img) imlib_blend_image_onto_image(logo_img, 0, 0, 0, 64, 64, logo_x, loading_y, 64, 64);
+            if (loading_txt) imlib_blend_image_onto_image(loading_txt, 0, 0, 0, 448, 64, loading_x, loading_y, scale_x_448, scale_y_64);
+            if (logo_img) imlib_blend_image_onto_image(logo_img, 0, 0, 0, 64, 64, logo_x, loading_y, scale_x_64, scale_y_64);
             
             imlib_context_set_image(bg2);
             imlib_blend_image_onto_image(screen_bg, 0, 0, 0, src_w, src_h, 0, 0, fb_width, fb_height);
-            if (loading_txt) imlib_blend_image_onto_image(loading_txt, 0, 0, 0, 448, 64, loading_x, loading_y, 448, 64);
-            if (logo_img) imlib_blend_image_onto_image(logo_img, 0, 0, 0, 64, 64, logo_x, loading_y, 64, 64);
+            if (loading_txt) imlib_blend_image_onto_image(loading_txt, 0, 0, 0, 448, 64, loading_x, loading_y, scale_x_448, scale_y_64);
+            if (logo_img) imlib_blend_image_onto_image(logo_img, 0, 0, 0, 64, 64, logo_x, loading_y, scale_x_64, scale_y_64);
 
         }
         
