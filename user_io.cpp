@@ -150,7 +150,6 @@ static char ovr_name[32] = {};
 static char orig_name[32] = {};
 static int  ovr_samedir = 0;
 int ovr_cfgcore_subfolder = 0;
-char ovr_logo_loading[32] = {0};
 
 char *user_io_make_filepath(const char *path, const char *filename)
 {
@@ -159,12 +158,11 @@ char *user_io_make_filepath(const char *path, const char *filename)
 	return filepath_store;
 }
 
-void user_io_name_override(const char* name, int samedir, int cfgcore_subfolder, const char* logo_loading)
+void user_io_name_override(const char* name, int samedir, int cfgcore_subfolder)
 {
 	snprintf(ovr_name, sizeof(ovr_name), "%s", name);
 	ovr_samedir = samedir;
 	ovr_cfgcore_subfolder = cfgcore_subfolder;
-	if (logo_loading) snprintf(ovr_logo_loading, sizeof(ovr_logo_loading), "%s", logo_loading);
 }
 
 void user_io_set_core_name(const char *name)
@@ -1568,7 +1566,7 @@ void user_io_init(const char *path, const char *xml)
 					load_screen_bg();
 					if (loader_bg != -1)
 					{
-						fade_in_screen(xml);
+						fade_in_screen(xml, NULL);
 						arcade_send_rom(xml);
 						if (!loader_bg)
 							fade_out_screen();
@@ -4305,4 +4303,111 @@ unsigned char user_io_ext_idx(char *name, char* ext)
 uint16_t user_io_get_sdram_cfg()
 {
 	return sdram_cfg;
+}
+
+static struct { const char *fmtstr; Imlib_Load_Error errno; } err_strings[] = {
+  {"file '%s' does not exist", IMLIB_LOAD_ERROR_FILE_DOES_NOT_EXIST},
+  {"file '%s' is a directory", IMLIB_LOAD_ERROR_FILE_IS_DIRECTORY},
+  {"permission denied to read file '%s'", IMLIB_LOAD_ERROR_PERMISSION_DENIED_TO_READ},
+  {"no loader for the file format used in file '%s'", IMLIB_LOAD_ERROR_NO_LOADER_FOR_FILE_FORMAT},
+  {"path for file '%s' is too long", IMLIB_LOAD_ERROR_PATH_TOO_LONG},
+  {"a component of path '%s' does not exist", IMLIB_LOAD_ERROR_PATH_COMPONENT_NON_EXISTANT},
+  {"a component of path '%s' is not a directory", IMLIB_LOAD_ERROR_PATH_COMPONENT_NOT_DIRECTORY},
+  {"path '%s' has too many symbolic links", IMLIB_LOAD_ERROR_TOO_MANY_SYMBOLIC_LINKS},
+  {"ran out of file descriptors trying to access file '%s'", IMLIB_LOAD_ERROR_OUT_OF_FILE_DESCRIPTORS},
+  {"denied write permission for file '%s'", IMLIB_LOAD_ERROR_PERMISSION_DENIED_TO_WRITE},
+  {"out of disk space writing to file '%s'", IMLIB_LOAD_ERROR_OUT_OF_DISK_SPACE},
+  {(const char *)NULL, (Imlib_Load_Error) 0}
+};
+
+static void print_imlib_load_error (Imlib_Load_Error err, const char *filepath) {
+  int i;
+  for (i = 0; err_strings[i].fmtstr != NULL; i++) {
+    if (err == err_strings[i].errno) {
+	printf("Screenshot Error (%d): ",err);
+	printf(err_strings[i].fmtstr,filepath);
+	printf("\n");
+      return ;
+    }
+  }
+  /* Unrecognised error */
+    printf("Screenshot Error (%d): unrecognized error accessing file '%s'\n",err,filepath);
+  return ;
+}
+
+bool user_io_screenshot(const char *pngname, int rescale)
+{
+	mister_scaler *ms = mister_scaler_init();
+	if (ms == NULL)
+	{
+		printf("problem with scaler, maybe not a new enough version\n");
+		Info("Scaler not compatible");
+		return false;
+	}
+	else
+	{
+		int scaled_width = ms->output_width;
+		int scaled_height = ms->output_height;
+		const char *basename = last_filename;
+		const char *extension = ".png";
+
+		if( pngname && *pngname )
+			basename = pngname;
+
+		if (!strcasecmp(cfg.screenshot_image_format, "bmp"))
+			extension = ".bmp";
+
+		if (video_get_rotated())
+		{
+			// Preserve the original aspect ratio when saving a scaled rotated frame.
+			scaled_width = scaled_height * ((float)ms->width / ms->height);
+		}
+
+		unsigned char *outputbuf = (unsigned char *)calloc(ms->width*ms->height * 4, 1);
+		// read the image into the outpubuf - RGBA format
+		mister_scaler_read(ms, outputbuf);
+		// using_data will keep a pointer and dispose of the outbuf
+		Imlib_Image im = imlib_create_image_using_data(ms->width,ms->height,(unsigned int *)outputbuf);
+		imlib_context_set_image(im);
+
+		static char filename[1024];
+		FileGenerateScreenshotName(basename, filename, extension, 1024);
+
+		/* do we want to save a rescaled image? */
+		if (rescale)
+		{
+			Imlib_Image im_scaled = imlib_create_cropped_scaled_image(0,0,ms->width,ms->height,scaled_width,scaled_height);
+			imlib_free_image_and_decache();
+			imlib_context_set_image(im_scaled);
+		}
+		Imlib_Load_Error error;
+		imlib_save_image_with_error_return(getFullPath(filename),&error);
+		if (error != IMLIB_LOAD_ERROR_NONE)
+		{
+			print_imlib_load_error (error, filename);
+			Info("error in saving png");
+			return false;
+		}
+		imlib_free_image_and_decache();
+		mister_scaler_free(ms);
+		free(outputbuf);
+		char msg[1024];
+		snprintf(msg, 1024, "Screen saved to\n%s", filename + strlen(SCREENSHOT_DIR"/"));
+		Info(msg);
+	}
+	return true;
+}
+
+void user_io_screenshot_cmd(const char *cmd)
+{
+	if( strncmp( cmd, "screenshot", 10 ))
+	{
+		return;
+	}
+
+	cmd += 10;
+	while( *cmd != '\0' && ( *cmd == '\t' || *cmd == ' ' || *cmd == '\n' ) )
+		cmd++;
+
+	user_io_screenshot(cmd,0);
 }
