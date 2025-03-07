@@ -6468,7 +6468,8 @@ void HandleUI(void)
 		OsdSetTitle("System Settings", OSD_ARROW_LEFT);
 		menumask = 0x7F;
 
-		OsdWrite(m++);
+		sprintf(s, "   *** AITORGOMEZ FORK ***");
+		OsdWrite(m++, s);
 		sprintf(s, "       MiSTer v%s", version + 5);
 		{
 			char str[8] = {};
