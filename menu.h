@@ -27,4 +27,6 @@ void StoreIdx_S(int idx, const char *path);
 int menu_present();
 extern int loader_bg;
 
+void menu_show_picker();
+
 #endif
