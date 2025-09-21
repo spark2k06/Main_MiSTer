@@ -195,7 +195,7 @@ char *user_io_make_filepath(const char *path, const char *filename);
 char *user_io_get_core_name(int orig = 0);
 char *user_io_get_core_name2();
 char *user_io_get_core_path(const char *suffix = NULL, int recheck = 0);
-void user_io_name_override(const char* name, int samedir);
+void user_io_name_override(const char* name, int samedir, int cfgcore_subfolder, const char *logo_loading);
 char has_menu();
 
 const char *get_image_name(int i);
@@ -298,5 +298,7 @@ char is_3do();
 #define CoreName2 user_io_get_core_name2()
 
 void screenshot_cb(void);
+extern int ovr_cfgcore_subfolder;
+extern char ovr_logo_loading[32];
 
 #endif // USER_IO_H

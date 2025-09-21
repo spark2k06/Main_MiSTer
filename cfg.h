@@ -105,7 +105,10 @@ typedef struct {
 	char autofire_rates[3072];
 	uint8_t autofire_on_directions;
 	char screenshot_image_format[16];
-
+	uint8_t loading_txt_up;
+	uint8_t waiting_txt_up;
+	char cfgcore_subfolder[32];
+	char cfgarcade_subfolder[32];
 } cfg_t;
 
 extern cfg_t cfg;

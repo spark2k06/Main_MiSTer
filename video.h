@@ -6,6 +6,10 @@
 #define VFILTER_SCAN  2
 #define VFILTER_ILACE 3
 
+extern volatile uint32_t *fb_base;
+extern int fb_width;
+extern int fb_height;
+
 struct VideoInfo
 {
 	uint32_t width;
@@ -61,7 +65,7 @@ void  video_mode_adjust();
 
 int   hasAPI1_5();
 
-void video_fb_enable(int enable, int n = 0);
+void video_fb_enable(int enable, int n = 0, int loader = 0);
 int video_fb_state();
 void video_menu_bg(int n, int idle = 0);
 int video_bg_has_picture();
