@@ -67,6 +67,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "profiling.h"
 #include "str_util.h"
 #include "autofire.h"
+#include "loadscreen.h"
 
 /*menu states*/
 enum MENU
@@ -233,6 +234,7 @@ static int32_t  bt_timer = 0;
 static bool osd_unlocked = 1;
 static char osd_code_entry[32];
 static uint32_t osd_lock_timer = 0;
+int loader_bg = 1;
 
 
 extern const char *version;
@@ -410,6 +412,30 @@ static int changeDir(char *dir)
 static const char *home_dir = NULL;
 static char filter[256] = {};
 static unsigned long filter_typing_timer = 0;
+
+static bool loader_bg_initialized = false;
+
+void init_loader_bg_early()
+{
+    if (loader_bg_initialized) return;
+    
+    const char* fname = "loader.png";
+    if (!FileExists(fname))
+    {
+        fname = "loader.jpg";
+        if (!FileExists(fname)) 
+        {
+            loader_bg = 1; // Keep default value if no loader image exists
+            loader_bg_initialized = true;
+            return;
+        }
+    }
+    
+    // File exists, so set loader_bg to 0 early
+    loader_bg = 0;
+    loader_bg_initialized = true;
+    printf("loader_bg [EARLY INIT] -> %d\n", loader_bg);
+}
 
 // this function displays file selection menu
 void SelectFile(const char* path, const char* pFileExt, int Options, unsigned char MenuSelect, unsigned char MenuCancel)
@@ -1174,6 +1200,26 @@ void HandleUI(void)
 		case 0:
 			if (CheckTimer(mgl->timer))
 			{
+				if (mgl->item[mgl->current].action == MGL_ACTION_FADE_IN)
+				{
+					if (mgl->item[mgl->current].mute)
+						set_volume(0x81, 1);
+					else
+						set_volume(0x80, 1);
+
+					fade_in_screen(mgl->item[mgl->current].path);
+					mgl->state = 3;
+				}
+				else if (mgl->item[mgl->current].action == MGL_ACTION_FADE_OUT)
+				{					
+					fade_out_screen();
+					if (mgl->item[mgl->current].mute)
+						set_volume(0x81, 1);
+					else
+						set_volume(0x80, 1);
+					mgl->state = 3;
+				}
+				else
 				mgl->state = (mgl->item[mgl->current].action == MGL_ACTION_LOAD) ? 1 : 4;
 			}
 			break;
@@ -1517,6 +1563,7 @@ void HandleUI(void)
 	switch (menustate)
 	{
 	case MENU_NONE1:
+		init_loader_bg_early();
 	case MENU_NONE2:
 	case MENU_INFO:
 		break;
@@ -2620,6 +2667,7 @@ void HandleUI(void)
 
 			if (selPath[0])
 			{
+				if (loader_bg != -1 && !mgl->done) fade_in_screen(selPath);
 
 				char idx = user_io_ext_idx(selPath, fs_pFileExt) << 6 | ioctl_index;
 				if (addon[0] == 'f' && addon[1] != '1') process_addon(addon, idx);
@@ -2696,6 +2744,14 @@ void HandleUI(void)
 				}
 
 				if (addon[0] == 'f' && addon[1] == '1') process_addon(addon, idx);
+
+				if (loader_bg != -1 && !mgl->done)
+				{
+					if (!loader_bg)
+						fade_out_screen();
+					else					
+						video_fb_enable(0);
+				}		
 			}
 			else if(is_atari800() && (ioctl_index == 8 || ioctl_index == 9))
 			{
@@ -8032,6 +8088,6 @@ void ProgressMessage(const char* title, const char* text, int current, int max)
 		for (int i = 0; i <= new_progress; i++) buf[i] = (i < new_progress) ? 0x7F : c;
 		buf[PROGRESS_CNT] = 0;
 
-		InfoMessage(progress_buf, 2000, title);
+		if (loader_bg) InfoMessage(progress_buf, 2000, title);
 	}
 }
