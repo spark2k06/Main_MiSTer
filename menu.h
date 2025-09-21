@@ -25,5 +25,7 @@ void StoreIdx_F(int idx, const char *path);
 void StoreIdx_S(int idx, const char *path);
 
 int menu_present();
+void init_loader_bg_early();
+extern int loader_bg;
 
 #endif

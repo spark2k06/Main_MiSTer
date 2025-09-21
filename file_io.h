@@ -120,6 +120,7 @@ int DirDelete(const char *name);
 
 //save/load from config dir
 #define CONFIG_DIR "config"
+extern char config_dir[64];
 const char* GetNameFromPath(char* path);
 int FileSaveConfig(const char *name, void *pBuffer, int size);
 int FileLoadConfig(const char *name, void *pBuffer, int size); // supply pBuffer = 0 to get the file size without loading
@@ -151,6 +152,8 @@ const char* FileReadLine(fileTextReader *reader);
 #define GAMES_DIR "games"
 #define CIFS_DIR "cifs"
 #define DOCS_DIR "docs"
+#define COVERS_DIR "covers"
+extern char covers_dir[64];
 
 void create_path(const char *base_dir, const char* sub_dir);
 

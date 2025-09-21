@@ -53,6 +53,8 @@ DirNameSet DirNames;
 // ** We have to open the file outselves with open() so we can set O_CLOEXEC to prevent
 // leaking the file descriptor when the user changes cores
 
+char config_dir[64] = {0};
+char covers_dir[64] = {0};
 static mz_zip_archive last_zip_archive = {};
 static int last_zip_fd = -1;
 static FILE *last_zip_cfile = NULL;
@@ -754,14 +756,18 @@ int FileLoad(const char *name, void *pBuffer, int size)
 
 int FileLoadConfig(const char *name, void *pBuffer, int size)
 {
-	char path[256] = { CONFIG_DIR"/" };
+	char path[256] = {0};
+	strcat(path, config_dir);
+	strcat(path, "/");
 	strcat(path, name);
 	return FileLoad(path, pBuffer, size);
 }
 
 int FileSaveConfig(const char *name, void *pBuffer, int size)
 {
-	char path[256] = { CONFIG_DIR };
+	char path[256] = {0};
+	strcat(path, config_dir);
+	strcat(path, "/");
 	const char *p;
 	while ((p = strchr(name, '/')))
 	{
@@ -778,7 +784,9 @@ int FileSaveConfig(const char *name, void *pBuffer, int size)
 
 int FileDeleteConfig(const char *name)
 {
-	char path[256] = { CONFIG_DIR"/" };
+	char path[256] = {0};
+	strcat(path, config_dir);
+	strcat(path, "/");
 	strcat(path, name);
 	return FileDelete(path);
 }
@@ -1056,7 +1064,10 @@ const char *getFullPath(const char *name)
 void setStorage(int dev)
 {
 	device = 0;
-	FileSave(CONFIG_DIR"/device.bin", &dev, sizeof(int));
+	char path[256] = {0};
+	strcat(path, config_dir);
+	strcat(path, "/device.bin");
+	FileSave(path, &dev, sizeof(int));
 	fpga_load_rbf("menu.rbf");
 }
 
@@ -1131,7 +1142,10 @@ void FindStorage(void)
 	char str[128];
 	printf("Looking for root device...\n");
 	device = 0;
-	FileLoad(CONFIG_DIR"/device.bin", &device, sizeof(int));
+	char path[256] = {0};
+	strcat(path, config_dir);
+	strcat(path, "/device.bin");
+	FileLoad(path, &device, sizeof(int));
 	orig_device = device;
 
 	if(device && !isUSBMounted())
@@ -1202,7 +1216,7 @@ void FindStorage(void)
 		printf("Using SD card as a root device\n");
 	}
 
-	sprintf(full_path, "%s/" CONFIG_DIR, getRootDir());
+	sprintf(full_path, "%s/%s", getRootDir(), config_dir);
 	DIR* dir = opendir(full_path);
 	if (dir) closedir(dir);
 	else if (ENOENT == errno) mkdir(full_path, S_IRWXU | S_IRWXG | S_IRWXO);
