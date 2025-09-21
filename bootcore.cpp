@@ -93,7 +93,9 @@ char *replaceStr(const char *str, const char *oldstr, const char *newstr)
 char* loadLastcore()
 {
 	char full_path[2100];
-	char path[256] = { CONFIG_DIR"/" };
+	char path[256] = {0};
+	strcat(path, config_dir);
+	strcat(path, "/");
 	strcat(path, "lastcore.dat");
 	sprintf(full_path, "%s/%s", getRootDir(), path);
 	FILE *fd = fopen(full_path, "r");

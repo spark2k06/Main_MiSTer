@@ -51,6 +51,7 @@
     <ClCompile Include="audio.cpp" />
     <ClCompile Include="battery.cpp" />
     <ClCompile Include="bootcore.cpp" />
+    <ClCompile Include="loadscreen.cpp" />
     <ClCompile Include="brightness.cpp" />
     <ClCompile Include="cfg.cpp" />
     <ClCompile Include="charrom.cpp" />
