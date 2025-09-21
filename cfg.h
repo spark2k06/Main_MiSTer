@@ -114,6 +114,10 @@ typedef struct {
 	uint16_t hdmi_off;
 	uint32_t keyboard_as_joystick[256];
 	uint8_t sanity_check;
+	uint8_t loading_txt_up;
+	uint8_t waiting_txt_up;
+	char cfgcore_subfolder[32];
+	char cfgarcade_subfolder[32];
 } cfg_t;
 
 extern cfg_t cfg;
