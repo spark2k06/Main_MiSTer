@@ -1,5 +1,5 @@
 // zaparoo.cpp
-// 2024, Aitor Gomez Garcia (info@aitorgomez.net)
+// 2025, Aitor Gomez Garcia (info@aitorgomez.net)
 
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -9,6 +9,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <arpa/inet.h>
+#include <strings.h>
 
 #include "spi.h"
 #include "user_io.h"
@@ -19,6 +21,107 @@
 #define SCALE_DIM(dim, ref, target) ((dim) * (target) / (ref))
 
 char* zaparoo = NULL;
+static const char *zaparoo_host = "127.0.0.1";
+static const int zaparoo_port = 7497;
+
+static int parse_content_length(const char *buf, int header_len)
+{
+    const char *p = buf;
+    const char *end = buf + header_len;
+    while (p < end) {
+        const char *line_end = strstr(p, "\r\n");
+        if (!line_end) break;
+        int line_len = line_end - p;
+        if (line_len > 0) {
+            if (strncasecmp(p, "Content-Length:", 15) == 0) {
+                return atoi(p + 15);
+            }
+        }
+        p = line_end + 2;
+    }
+    return -1;
+}
+
+// Minimal blocking HTTP POST with short timeouts; writes body into resp (NUL-terminated).
+static bool zaparoo_http_post(const char *payload, char *resp, size_t resp_sz)
+{
+    if (!payload || !resp || resp_sz < 2) return false;
+
+    char headers[256];
+    int payload_len = strlen(payload);
+    int hdr_len = snprintf(headers, sizeof(headers),
+        "POST /api/v0.1 HTTP/1.1\r\n"
+        "Host: %s:%d\r\n"
+        "Content-Type: application/json\r\n"
+        "Content-Length: %d\r\n"
+        "Connection: close\r\n"
+        "\r\n",
+        zaparoo_host, zaparoo_port, payload_len);
+    if (hdr_len <= 0 || hdr_len >= (int)sizeof(headers)) return false;
+
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) return false;
+
+    struct timeval tv;
+    tv.tv_sec = 0;
+    tv.tv_usec = 500000; // 500 ms
+    setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+    setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+
+    struct sockaddr_in addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(zaparoo_port);
+    if (inet_pton(AF_INET, zaparoo_host, &addr.sin_addr) != 1) {
+        close(sockfd);
+        return false;
+    }
+    if (connect(sockfd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
+        close(sockfd);
+        return false;
+    }
+
+    if (write(sockfd, headers, hdr_len) != hdr_len ||
+        write(sockfd, payload, payload_len) != payload_len) {
+        close(sockfd);
+        return false;
+    }
+
+    char buf[4096];
+    int total = 0;
+    int content_len = -1;
+    int header_len = -1;
+
+    while (total < (int)sizeof(buf) - 1) {
+        int n = read(sockfd, buf + total, (int)sizeof(buf) - 1 - total);
+        if (n <= 0) break;
+        total += n;
+
+        if (header_len == -1) {
+            char *hdr_end = strstr(buf, "\r\n\r\n");
+            if (hdr_end) {
+                header_len = (int)(hdr_end + 4 - buf);
+                content_len = parse_content_length(buf, header_len);
+            }
+        }
+
+        if (header_len != -1 && content_len >= 0) {
+            int body_bytes = total - header_len;
+            if (body_bytes >= content_len) break;
+        }
+    }
+    close(sockfd);
+
+    if (total <= 0) return false;
+    buf[total] = '\0';
+
+    char *body = strstr(buf, "\r\n\r\n");
+    if (!body) return false;
+    body += 4;
+    strncpy(resp, body, resp_sz - 1);
+    resp[resp_sz - 1] = '\0';
+    return true;
+}
 
 Imlib_Image load_zaparoo_img(const char* s)
 {
@@ -75,59 +178,54 @@ Imlib_Image load_waiting_img()
 }
 
 void getZaparoo() {    
-    int sockfd;
-    struct sockaddr_un addr;
-    const char* socket_path = "/tmp/zaparoo/core.sock";
-    const char* message = "connection";
-    char buffer[1024] = {0};
-    char *response;
+    // New Zaparoo Core API (HTTP/JSON-RPC on localhost:7497)
+    // Query readers first; only show icon/text when a reader is connected.
+    const char *payload_version  = "{\"jsonrpc\":\"2.0\",\"id\":\"00000000-0000-0000-0000-000000000123\",\"method\":\"version\"}";
+    char response[4096];
+    char version[64] = {0};
+    char info[128] = {0};
+    bool reader_connected = false;
 
-    sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
-    if (sockfd == -1) {
-        perror("socket");
-        zaparoo = NULL;
-        return;
-    }
+    if (zaparoo) { free(zaparoo); zaparoo = NULL; }
 
-    memset(&addr, 0, sizeof(addr));
-    addr.sun_family = AF_UNIX;
-    strncpy(addr.sun_path, socket_path, sizeof(addr.sun_path) - 1);
+    // Helper to pull a string value from JSON without full parsing.
+    auto extract = [](const char *json, const char *key, char *out, size_t out_sz)->bool {
+        char pattern[64];
+        snprintf(pattern, sizeof(pattern), "\"%s\":\"", key);
+        const char *p = strstr(json, pattern);
+        if (!p) return false;
+        p += strlen(pattern);
+        const char *end = strchr(p, '"');
+        if (!end || end <= p) return false;
+        size_t len = (size_t)(end - p);
+        if (len >= out_sz) len = out_sz - 1;
+        strncpy(out, p, len);
+        out[len] = '\0';
+        return true;
+    };
 
-    if (connect(sockfd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
-        perror("connect");
-        close(sockfd);
-        zaparoo = NULL;
-        return;
-    }
-
-    if (write(sockfd, message, strlen(message)) == -1) {
-        perror("write");
-        close(sockfd);
-        zaparoo = NULL;
-        return;
-    }
-
-    if (read(sockfd, buffer, sizeof(buffer)) == -1) {
-        perror("read");
-        close(sockfd);
-        zaparoo = NULL;
-        return;
-    }
-
-    close(sockfd);
-
-    if (strncmp(buffer, "true,", 5) == 0) {
-        response = (char*)malloc(strlen(buffer) - 4 + strlen("Zaparoo: "));
-        if (response) {
-            strcpy(response, "Zaparoo: ");
-            strcat(response, buffer + 5);
+    // First, check readers
+    const char *payload_readers = "{\"jsonrpc\":\"2.0\",\"id\":\"00000000-0000-0000-0000-000000000124\",\"method\":\"readers\"}";
+    if (zaparoo_http_post(payload_readers, response, sizeof(response))) {
+        if (strstr(response, "\"connected\":true")) {
+            reader_connected = true;
+            extract(response, "info", info, sizeof(info));
         }
-        zaparoo = response;
-        return;
-    } else {
+    }
+
+    if (!reader_connected) {
         zaparoo = NULL;
         return;
     }
+
+    // Try to get version to display a nicer label
+    zaparoo_http_post(payload_version, response, sizeof(response));
+    extract(response, "version", version, sizeof(version));
+
+    const char *label = info[0] ? info : (version[0] ? version : "reader connected");
+    size_t len = strlen("Zaparoo: ") + strlen(label) + 1;
+    zaparoo = (char*)malloc(len);
+    if (zaparoo) snprintf(zaparoo, len, "Zaparoo: %s", label);
 }
 
 bool zaparoo_waiting(int menu_bgn, Imlib_Image bg1, Imlib_Image bg2)
