@@ -1811,6 +1811,8 @@ static void cache_raw_edid_mfg_id(const uint8_t *buf)
 
 static bool read_edid_segment(uint8_t segment, uint8_t *buf)
 {
+	i2c_smbus_write_byte_data(hdmi_main_fd, 0x96, 4); // clear possible pending EDID IRQ (auto EDID after HPD)
+
 	i2c_smbus_write_byte_data(hdmi_main_fd, 0xC4, segment);
 	i2c_smbus_write_byte_data(hdmi_main_fd, 0xC9, 0x03);
 	usleep(1000);
@@ -1828,11 +1830,15 @@ static bool read_edid_segment(uint8_t segment, uint8_t *buf)
 				int value = i2c_smbus_read_byte_data(hdmi_edid_fd, (uint8_t)i);
 				buf[i] = (value < 0) ? 0 : (uint8_t)value;
 			}
+
+			i2c_smbus_write_byte_data(hdmi_main_fd, 0xC9, 0x03);
 			return true;
 		}
 		usleep(10000);
 	}
 
+	printf("EDID timeout.\n");
+	i2c_smbus_write_byte_data(hdmi_main_fd, 0xC9, 0x03);
 	return false;
 }
 
@@ -1841,23 +1847,17 @@ static int read_edid(bool force = false)
 	if (hdmi_main_fd < 0 || hdmi_edid_fd < 0) return 0;
 	if (is_edid_valid() && !force) return 1;
 
-	//Test if adv7513 senses hdmi clock. If not, don't bother with the edid query
-	int hpd_state = i2c_smbus_read_byte_data(hdmi_main_fd, 0x42);
-	if (hpd_state < 0 || !(hpd_state & 0x20))
-	{
-		raw_edid_mfg_id_valid = false;
-		return 0;
-	}
-
 	// read into scratch; replace live edid[] only on a valid read, so a transient failure can't blank it
-	uint8_t buf[sizeof(edid)] = {};
+	static uint8_t buf[sizeof(edid)];
+	memset(buf, 0, sizeof(buf));
 	bool ddc_responded = false;
 
 	// waiting for valid EDID
 	for (int k = 0; k < 20; k++)
 	{
-		int current = i2c_smbus_read_byte_data(hdmi_main_fd, 0x42);
-		if (current < 0 || !(current & 0x20))
+		//Test if adv7513 senses hdmi clock. If not, don't bother with the edid query
+		int hpd_state = i2c_smbus_read_byte_data(hdmi_main_fd, 0x42);
+		if (hpd_state < 0 || ((hpd_state & 0x60) != 0x60))
 		{
 			raw_edid_mfg_id_valid = false;
 			return 0;
@@ -1866,6 +1866,8 @@ static int read_edid(bool force = false)
 		if (got_interrupt) ddc_responded = true;
 		if (is_edid_valid_buf(buf)) break;
 		if (!got_interrupt) break;  // no DDC response — display has no EDID, don't retry
+
+		printf("Invalid EDID: retry...\n");
 		usleep(100000);
 	}
 
@@ -1876,6 +1878,7 @@ static int read_edid(bool force = false)
 			// header bad but DDC answered: still cache raw mfg id for non-conformant DAC EDIDs
 			cache_raw_edid_mfg_id(buf);
 			printf("Invalid EDID: incorrect header.\n");
+			hexdump(buf, 256, 0);
 		}
 		else
 		{
@@ -2717,7 +2720,7 @@ void video_hdmi_power(int on)
 	// ADV7513 power-down control. 0 = power on, 1 = power down.
 	if (hdmi_main_fd >= 0)
 	{
-		uint8_t val = on ? 0x00 : 0x40;
+		uint8_t val = on ? 0x10 : 0x50;
 		int res = i2c_smbus_write_byte_data(hdmi_main_fd, 0x41, val);
 		if (res < 0) printf("i2c: write error (41 %02X): %d\n", val, res);
 	}
