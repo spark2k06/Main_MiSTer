@@ -181,7 +181,7 @@ The first element of each line is the **AppId** of app/game, the second element 
 
 In addition:
 
-In the **AUTOEXEC.BAT**, at the end of it, **LAUNCHER.EXE** must be executed for **ao486** and **LAUNCHER.EXE 0x2d0** for **PC-XT/Tandy**.
+In the **AUTOEXEC.BAT**, at the end of it, **LAUNCHER.EXE** must be executed for **ao486** and **LAUNCHER.EXE 0x2c0** for **PC-XT/Tandy**. The **PCXT-EGA** core uses **LAUNCHER.EXE 0x340** instead, its RTC port having been placed there specifically to keep clear of the EGA graphics card.
 
 At the end of the **AUTOEXEC.BAT**, after **LAUNCHER.EXE**, **LAUNCHER.BAT** must be executed, this file is auto-created by **LAUNCHER.EXE**.
 
